@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coderstation — Kokoro Text-to-Voice Studio</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <!-- Main Studio Workspace (Compact Fluid 2-Column Creative Workstation) -->
+    <main class="studio-grid">
+      <!-- LEFT RAIL: Compact Glassmorphic Studio Pulldown Dock & Playback Deck -->
+      <aside class="studio-dock">
+        <div class="card dock-card">
+          <!-- Live Studio Status Indicator -->
+          <div class="dock-status-pill" id="engineStatusPill">
+            <span class="status-pulse-dot" id="engineStatusDot"></span>
+            <div class="status-pill-copy">
+              <strong id="engineStatusTitle">CODERSTATION Studio</strong>
+              <small id="engineStatusSub">Neural Voice Technology</small>
+            </div>
+          </div>
+
+          <div class="dock-divider"></div>
+
+          <!-- Voice, Language & Speech Feeling Control Deck -->
+          <div class="dock-glass-box">
+            <div class="dock-section-label">
+              <span class="dock-dot"></span>
+              <span>VOICE &amp; SPEECH EXPRESSION</span>
+            </div>
+
+            <div class="field-group">
+              <label for="voiceSelect">Active Voice (Built-in or Cloned 🧬)</label>
+              <select id="voiceSelect" class="dock-select"></select>
+            </div>
+
+            <div class="field-group">
+              <label for="langSelect">Language / Accent Phonemizer</label>
+              <select id="langSelect" class="dock-select">
+                <option value="en-us">English (US)</option>
+                <option value="en-gb">English (UK)</option>
+                <option value="es">Spanish (es)</option>
+                <option value="fr-fr">French (fr-fr)</option>
+                <option value="it">Italian (it)</option>
+                <option value="pt-br">Portuguese (pt-br)</option>
+                <option value="ja">Japanese (ja)</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <div class="dock-feeling-head">
+                <label for="emotionSelect">Speech Feeling</label>
+                <span id="activeEmotionDesc" class="dock-emotion-desc">Natural, balanced delivery</span>
+              </div>
+              <select id="emotionSelect" class="dock-select"></select>
+            </div>
+
+            <!-- Prosody Fine-Tune Sliders (Intensity, Speaking Rate & Pitch) -->
+            <div class="dock-sliders-stack">
+              <div class="dock-slider-row">
+                <div class="slider-head">
+                  <span>Feeling Intensity</span>
+                  <strong id="valIntensity">100%</strong>
+                </div>
+                <input type="range" id="emotionIntensity" min="0.0" max="1.5" step="0.05" value="1.0" />
+              </div>
+              <div class="dock-slider-row">
+                <div class="slider-head">
+                  <span>Base Speed</span>
+                  <strong id="valSpeed">1.00x</strong>
+                </div>
+                <input type="range" id="speedInput" min="0.60" max="1.60" step="0.02" value="1.00" />
+              </div>
+              <div class="dock-slider-row">
+                <div class="slider-head">
+                  <span>Pitch Offset</span>
+                  <strong id="valPitch">0.0 st</strong>
+                </div>
+                <input type="range" id="pitchInput" min="-4.0" max="4.0" step="0.1" value="0.0" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Audio Playback & Manual Save Pulldown Deck -->
+          <div class="dock-glass-box dock-player-card">
+            <div class="dock-section-label">
+              <span class="dock-dot cyan"></span>
+              <span>PLAYBACK &amp; MANUAL EXPORT</span>
+            </div>
+
+            <div class="field-group">
+              <label for="mainAudioPlayer">Audio Preview</label>
+              <audio id="mainAudioPlayer" controls></audio>
+            </div>
+
+            <div class="field-group">
+              <label for="manualSaveSelect">Save Audio Format (WAV / MP3)</label>
+              <select id="manualSaveSelect" class="dock-select dock-save-select" disabled>
+                <option value="">💾 Save Audio (WAV / MP3)...</option>
+                <option value="wav">💾 Save WAV (Lossless 24 kHz)</option>
+                <option value="mp3">🎵 Save MP3 (Compressed)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- RIGHT STAGE: 3D Holographic Avatar Viewport + Text-to-Speech Console -->
+      <section class="studio-main-panel">
+        <div class="card visualizer-card">
+          <!-- HTML5 60FPS Canvas Stage -->
+          <div class="canvas-stage-wrapper">
+            <canvas id="speechCanvas" width="840" height="430"></canvas>
+
+            <!-- Live GPU, RAM, and CPU Separate Chart Containers -->
+            <div class="stage-hud-top">
+              <div id="sysMonitorHud" class="sys-monitor-stack">
+                <div class="sys-metric-card">
+                  <div class="sys-card-head">
+                    <span class="sys-metric"><i class="sys-dot gpu"></i>GPU</span>
+                    <strong id="sysGpuVal">0%</strong>
+                  </div>
+                  <canvas id="sysGpuChart" class="sys-mini-chart" width="126" height="30"></canvas>
+                </div>
+
+                <div class="sys-metric-card">
+                  <div class="sys-card-head">
+                    <span class="sys-metric"><i class="sys-dot ram"></i>RAM</span>
+                    <strong id="sysRamVal">0%</strong>
+                  </div>
+                  <canvas id="sysRamChart" class="sys-mini-chart" width="126" height="30"></canvas>
+                </div>
+
+                <div class="sys-metric-card">
+                  <div class="sys-card-head">
+                    <span class="sys-metric"><i class="sys-dot cpu"></i>CPU</span>
+                    <strong id="sysCpuVal">0%</strong>
+                  </div>
+                  <canvas id="sysCpuChart" class="sys-mini-chart" width="126" height="30"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden Live Synchronized Karaoke & Punctuation Pause Timeline (kept in DOM for JS hooks) -->
+          <div class="timeline-section hidden">
+            <div class="timeline-header">
+              <span>Live Synchronized Speech &amp; Punctuation Pause Timeline</span>
+              <span id="synthStatsLabel" class="stats-meta">Ready to synthesize</span>
+            </div>
+            <div id="karaokeTimeline" class="karaoke-timeline">
+              <div class="empty-timeline-msg">Click <strong>"🔊 Generate &amp; Animate Speech"</strong> to watch
+                real-time clause highlighting and punctuation pause animations.</div>
+            </div>
+          </div>
+
+          <!-- Text-to-Speech Script Console (Replaces Hidden Timeline Container) -->
+          <div class="tts-input-section">
+            <div class="console-top-bar">
+              <div class="dock-section-label">
+                <span class="dock-dot orange"></span>
+                <span>SPEECH SCRIPT CONSOLE</span>
+              </div>
+              <span id="scriptMetaLabel" class="console-meta-badge">0 words • 0 chars</span>
+            </div>
+
+            <!-- Quick Script Preset, Insert Pause & Inline Feeling Pulldowns -->
+            <div class="insert-toolbar">
+              <div class="pulldown-group">
+                <label for="presetSelect" class="toolbar-label">Quick Script Preset:</label>
+                <select id="presetSelect" class="toolbar-select">
+                  <option value="">✨ Load Preset...</option>
+                  <option value="dramatic_story">🎭 Dramatic Story</option>
+                  <option value="multi_emotion">🌈 Multi-Emotion Demo</option>
+                  <option value="pause_showcase">⏱️ 4-Pause Showcase</option>
+                </select>
+              </div>
+              <div class="pulldown-group">
+                <label for="insertPauseSelect" class="toolbar-label">Insert Pause:</label>
+                <select id="insertPauseSelect" class="toolbar-select">
+                  <option value="">+ Choose Pause...</option>
+                  <option value=", ">Comma ( , ) — Short Pause</option>
+                  <option value=". ">Period ( . ) — Moderate Pause</option>
+                  <option value="... ">Ellipsis ( ... ) — Longer, Dramatic Pause</option>
+                  <option value=" — ">Em Dash ( — ) — Break in Thought</option>
+                </select>
+              </div>
+              <div class="pulldown-group">
+                <label for="insertFeelingSelect" class="toolbar-label">Inline Feeling:</label>
+                <select id="insertFeelingSelect" class="toolbar-select">
+                  <option value="">+ Choose Inline Feeling...</option>
+                  <option value="[neutral] ">😐 [neutral] — Balanced</option>
+                  <option value="[happy] ">😊 [happy] — Joyful</option>
+                  <option value="[excited] ">🤩 [excited] — Energetic</option>
+                  <option value="[dramatic] ">🎭 [dramatic] — Suspenseful</option>
+                  <option value="[sad] ">😢 [sad] — Melancholic</option>
+                  <option value="[whisper] ">🤫 [whisper] — Intimate</option>
+                  <option value="[angry] ">😠 [angry] — Intense</option>
+                  <option value="[calm] ">🌿 [calm] — Soothing</option>
+                  <option value="[fearful] ">😨 [fearful] — Anxious</option>
+                </select>
+              </div>
+            </div>
+
+            <textarea id="scriptInput" rows="3"
+              placeholder="Type your script here... Use commas (,), periods (.), ellipses (...), and em dashes (—) for expressive pauses, or inline tags like [happy], [dramatic], [whisper]...">[dramatic] Listen closely, my friend. In the quiet of the night... something extraordinary is about to happen — can you feel it? [excited] Wait, look at the horizon! The signal is finally alive, clear, and speaking with true emotion.</textarea>
+
+            <!-- Primary Generate & Settings Dialog Action Row -->
+            <div class="main-generate-row">
+              <button type="button" id="synthesizeBtn" class="btn-primary">
+                <span>🔊 Generate &amp; Animate Speech</span>
+              </button>
+              <button type="button" class="btn-settings-gear" data-open-dialog="dlgTabPauses"
+                title="Open Studio Settings Dialog">
+                ⚙️ All Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- UNIFIED MODAL SETTINGS DIALOG (All Settings Placed in Dialog Form)    -->
+  <!-- ===================================================================== -->
+  <dialog id="settingsDialog" class="settings-modal">
+    <div class="modal-container">
+      <!-- Dialog Header -->
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-icon-badge">⚙️</span>
+          <div>
+            <h2>Studio Configuration &amp; Voice Settings</h2>
+            <p class="modal-subtitle">Fine-tune voices, emotional prosody, punctuation pauses, voice cloning, and export
+            </p>
+          </div>
+        </div>
+        <button type="button" id="closeDialogBtn" class="modal-close-btn" title="Close Dialog (Esc)">✕</button>
+      </div>
+
+      <!-- Dialog 2-Pane Body: Vertical Navigation Rail + Tab Content -->
+      <div class="modal-workspace">
+        <nav class="modal-nav-tabs" role="tablist">
+          <button type="button" class="modal-tab-btn active" data-dialog-tab="dlgTabPauses" role="tab">
+            <span class="m-tab-icon">⏱️</span>
+            <span class="m-tab-text">
+              <strong>Punctuation Pauses</strong>
+              <small>Comma, Period, Ellipsis, Dash</small>
+            </span>
+          </button>
+          <button type="button" class="modal-tab-btn" data-dialog-tab="dlgTabCloning" role="tab">
+            <span class="m-tab-icon">🧬</span>
+            <span class="m-tab-text">
+              <strong>Voice Cloning</strong>
+              <small>100% Mic &amp; Audio Cloner</small>
+            </span>
+          </button>
+          <button type="button" class="modal-tab-btn" data-dialog-tab="dlgTabOutput" role="tab">
+            <span class="m-tab-icon">💾</span>
+            <span class="m-tab-text">
+              <strong>Output &amp; History</strong>
+              <small>Manual WAV / MP3 Save</small>
+            </span>
+          </button>
+        </nav>
+
+        <!-- Dialog Body Content -->
+        <div class="modal-body">
+          <!-- DIALOG TAB 1: PUNCTUATION PAUSE CALIBRATION -->
+          <div id="dlgTabPauses" class="modal-tab-pane active">
+            <div class="dlg-section-head">
+              <h3>Punctuation Pause Duration Calibration</h3>
+              <button type="button" id="resetPausesBtn" class="btn-ghost btn-xs">↺ Reset Default Timings</button>
+            </div>
+            <p class="tab-hint">Customize the exact silence duration and prosodic decay inserted after each punctuation
+              mark during speech synthesis.</p>
+
+            <div class="pause-grid">
+              <div class="pause-control p-border-comma">
+                <div class="pause-title">
+                  <span><strong>Comma ( , )</strong> — Short Pause</span>
+                  <span class="val-pill" id="valComma">0.22s</span>
+                </div>
+                <input type="range" id="pauseComma" min="0.05" max="1.20" step="0.01" value="0.22" />
+                <small>Brief clause breath between connected phrases while preserving non-terminal pitch</small>
+              </div>
+
+              <div class="pause-control p-border-period">
+                <div class="pause-title">
+                  <span><strong>Period ( . )</strong> — Moderate Pause</span>
+                  <span class="val-pill" id="valPeriod">0.50s</span>
+                </div>
+                <input type="range" id="pausePeriod" min="0.10" max="1.80" step="0.02" value="0.50" />
+                <small>Clear full-stop cadence between complete sentences and thoughts</small>
+              </div>
+
+              <div class="pause-control p-border-ellipsis">
+                <div class="pause-title">
+                  <span><strong>Ellipsis ( ... )</strong> — Longer, Dramatic Pause</span>
+                  <span class="val-pill" id="valEllipsis">0.95s</span>
+                </div>
+                <input type="range" id="pauseEllipsis" min="0.25" max="2.50" step="0.05" value="0.95" />
+                <small>Suspenseful trailing tempo slowdown + extended dramatic silence</small>
+              </div>
+
+              <div class="pause-control p-border-emdash">
+                <div class="pause-title">
+                  <span><strong>Em Dash ( — )</strong> — Break in Thought</span>
+                  <span class="val-pill" id="valEmdash">0.40s</span>
+                </div>
+                <input type="range" id="pauseEmdash" min="0.10" max="1.60" step="0.02" value="0.40" />
+                <small>Natural pivot or sudden parenthetical break in mid-thought</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- DIALOG TAB 3: VOICE CLONING STUDIO -->
+          <div id="dlgTabCloning" class="modal-tab-pane">
+            <div class="subtab-header-bar">
+              <div class="tab-buttons" role="tablist">
+                <button type="button" class="tab-btn active" data-tab="tabReference">
+                  <span class="subtab-icon">🎙️</span>
+                  <span>Reference Audio &amp; Mic Cloner</span>
+                </button>
+                <button type="button" class="tab-btn" data-tab="tabManage">
+                  <span class="subtab-icon">📂</span>
+                  <span>Saved Cloned Voices</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Sub-Tab A: Clone from Reference Audio or Mic -->
+            <div id="tabReference" class="tab-pane active">
+              <p class="tab-hint">Record your voice using the microphone while reading the guided calibration script
+                below
+                (or upload a <code>.wav</code> / <code>.mp3</code> file). The cloner extracts your F0 pitch, harmonic
+                warmth, and 64-band formant envelope.</p>
+
+              <!-- Guided Reading Context / Teleprompter for Microphone Input -->
+              <div class="reading-context-card" id="readingContextCard">
+                <div class="reading-context-header">
+                  <div class="reading-title-group">
+                    <span class="reading-badge">📖 Read Aloud for Microphone Cloning</span>
+                    <select id="readingPromptSelect" class="reading-prompt-select">
+                      <option value="rainbow">1. Phonetic Rainbow &amp; Formant Calibration (Recommended)</option>
+                      <option value="expressive">2. Expressive Storytelling &amp; Pitch Range</option>
+                      <option value="harvard">3. Harvard Acoustic Balance Sentences</option>
+                      <option value="technical">4. Conversational &amp; Natural Cadence</option>
+                    </select>
+                  </div>
+                  <button type="button" id="nextPromptBtn" class="btn-ghost btn-xs">🎲 Next Script</button>
+                </div>
+
+                <div class="reading-teleprompter" id="readingTeleprompter">
+                  "When the sunlight strikes raindrops in the air, they act as a prism and form a rainbow. The division
+                  of
+                  white light into many beautiful colors — with deep resonance, clear vowels... and natural rhythm."
+                </div>
+
+                <div class="reading-progress-wrap">
+                  <div id="readingPaceFill" class="reading-pace-fill"></div>
+                </div>
+
+                <div class="reading-footer-tips">
+                  <span>💡 <strong>Tip:</strong> Read at a natural pace in a quiet room (~6 to 10 seconds). Include the
+                    comma, ellipsis, and em-dash pauses.</span>
+                  <span id="micTimerBadge" class="mic-timer-badge">00.0s</span>
+                </div>
+              </div>
+
+              <!-- Live Microphone Recording Controls & Input Level Meter -->
+              <div class="mic-studio-box">
+                <div class="mic-controls-row">
+                  <button type="button" id="micRecordBtn" class="btn-mic-record">
+                    🎙️ Start Microphone Recording
+                  </button>
+                  <div class="mic-meter-container">
+                    <div class="mic-meter-header">
+                      <span id="micStatus" class="mic-status">Ready — Click "Start Microphone Recording" and read the
+                        passage above</span>
+                      <span id="micDbLabel" class="mic-db-label">Level: 0%</span>
+                    </div>
+                    <div class="mic-level-track">
+                      <div id="micLevelFill" class="mic-level-fill"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="mic-preview-row">
+                  <audio id="refPreviewAudio" controls class="hidden-audio"></audio>
+                  <span class="or-divider">or upload audio file:</span>
+                  <input type="file" id="cloneRefFile" accept="audio/*" class="compact-file-input" />
+                </div>
+              </div>
+
+              <div class="clone-form-grid" style="margin-top: 10px;">
+                <div class="field-group">
+                  <label for="cloneRefName">New Cloned Voice Name</label>
+                  <input type="text" id="cloneRefName" placeholder="e.g. My Microphone Clone"
+                    value="My Microphone Voice" />
+                </div>
+                <div class="field-group">
+                  <label for="cloneRefGender">Voice Gender (Exact Match)</label>
+                  <select id="cloneRefGender">
+                    <option value="female">👩 Female Voice</option>
+                    <option value="male">👨 Male Voice</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="button" id="createRefCloneBtn" class="btn-accent" style="margin-top: 8px;">🧬 Clone 100% Exact Voice from Input (No Modification)</button>
+              <div id="cloneAnalysisResult" class="clone-result-box hidden"></div>
+            </div>
+
+            <!-- Sub-Tab B: Manage Cloned Voices -->
+            <div id="tabManage" class="tab-pane">
+              <div id="savedClonesList" class="clones-list"></div>
+            </div>
+          </div>
+
+          <!-- DIALOG TAB 4: OUTPUT FORMAT (WAV / MP3) & SAVED HISTORY -->
+          <div id="dlgTabOutput" class="modal-tab-pane">
+            <div class="dlg-section-head">
+              <h3>Output Format &amp; File Naming</h3>
+              <span class="stats-meta">Manual Save Only (WAV / MP3)</span>
+            </div>
+
+            <div class="save-options" style="margin-bottom: 14px;">
+              <div class="field-group">
+                <label for="customFilename">Custom Output Filename Prefix (Optional)</label>
+                <input type="text" id="customFilename" placeholder="e.g. my_dramatic_story" />
+              </div>
+              <div class="field-group">
+                <label for="preferredFormat">Primary Playback &amp; Export Format</label>
+                <select id="preferredFormat">
+                  <option value="wav">WAV (Lossless 24 kHz PCM)</option>
+                  <option value="mp3">MP3 (Compressed MPEG Audio)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="dlg-section-head">
+              <h3>Saved Audio History (Download WAV or MP3)</h3>
+            </div>
+            <div id="historyList" class="history-list">
+              <div class="empty-timeline-msg">Saved speech clips will appear here with instant WAV &amp; MP3 download
+                buttons.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dialog Footer -->
+      <div class="modal-footer">
+        <span class="modal-footer-hint">Changes apply immediately to your next speech synthesis.</span>
+        <div class="modal-footer-actions">
+          <button type="button" id="applyAndGenerateBtn" class="btn-primary btn-sm">
+            🔊 Apply &amp; Generate Speech
+          </button>
+          <button type="button" id="doneDialogBtn" class="btn-secondary">
+            ✓ Done
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+
+</html>
