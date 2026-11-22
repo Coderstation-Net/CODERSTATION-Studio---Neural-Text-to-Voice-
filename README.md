@@ -8,6 +8,7 @@
 **CODERSTATION Studio** is a local, GPU-accelerated Text-to-Voice and Voice Cloning workstation powered by **Kokoro v1.0 ONNX**. It pairs studio-grade expressive speech synthesis with a glassmorphic web interface, a 60 FPS 3D holographic dot-matrix avatar, and real-time hardware telemetry.
 
 ---
+![Uploading image.png…]()
 
 ## Key Features
 
