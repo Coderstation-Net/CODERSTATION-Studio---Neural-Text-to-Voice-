@@ -1,4 +1,4 @@
-# CODERSTATION Studio — Neural Text-to-Voice  
+# CODERSTATION Studio - Neural Text-to-Voice  
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-062E52?style=flat-square&logo=python&logoColor=white)
 ![Kokoro ONNX](https://img.shields.io/badge/Engine-Kokoro%20v1.0%20ONNX-FF5C0A?style=flat-square)
