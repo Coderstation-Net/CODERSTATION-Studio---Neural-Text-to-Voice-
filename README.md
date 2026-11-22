@@ -1,4 +1,4 @@
-# CODERSTATION Studio — Neural Text-to-Voice  
+<img width="828" height="431" alt="image" src="https://github.com/user-attachments/assets/059e3fa2-7a1e-4c89-a728-2c7af89778c6" /># CODERSTATION Studio — Neural Text-to-Voice  
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-062E52?style=flat-square&logo=python&logoColor=white)
 ![Kokoro ONNX](https://img.shields.io/badge/Engine-Kokoro%20v1.0%20ONNX-FF5C0A?style=flat-square)
